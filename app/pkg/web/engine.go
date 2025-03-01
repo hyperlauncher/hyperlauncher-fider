@@ -33,12 +33,14 @@ var (
 	cspFont    = "font-src 'self' https://fonts.gstatic.com data: %[2]s"
 	cspImage   = "img-src 'self' https: data: %[2]s"
 	cspObject  = "object-src 'none'"
-	cspFrame   = "frame-src 'self' https://*.paddle.com"
+	cspFrame   = "frame-src 'self' https://*.paddle.com https://auth.privy.io"
 	cspMedia   = "media-src 'none'"
-	cspConnect = "connect-src 'self' https://www.google-analytics.com %[2]s"
+	// Updated cspConnect to include https://auth.privy.io
+	cspConnect = "connect-src 'self' https://www.google-analytics.com https://auth.privy.io https://explorer-api.walletconnect.com %[2]s"
 
-	//CspPolicyTemplate is the template used to generate the policy
-	CspPolicyTemplate = fmt.Sprintf("%s; %s; %s; %s; %s; %s; %s; %s; %s; %s", cspBase, cspDefault, cspStyle, cspScript, cspImage, cspFont, cspObject, cspMedia, cspConnect, cspFrame)
+	// CspPolicyTemplate remains unchanged
+	CspPolicyTemplate = fmt.Sprintf("%s; %s; %s; %s; %s; %s; %s; %s; %s; %s",
+		cspBase, cspDefault, cspStyle, cspScript, cspImage, cspFont, cspObject, cspMedia, cspConnect, cspFrame)
 )
 
 type notFoundHandler struct {
