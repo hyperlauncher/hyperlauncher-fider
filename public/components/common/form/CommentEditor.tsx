@@ -66,6 +66,7 @@ interface CommentEditorProps {
   onChange?: (value: string) => void
   onFocus?: React.FocusEventHandler<HTMLDivElement>
   className?: string
+  readOnly?: boolean
 }
 
 const Placeholder = ({ attributes, children }: RenderPlaceholderProps) => {
@@ -191,7 +192,7 @@ export const CommentEditor: React.FunctionComponent<CommentEditorProps> = (props
       }}
     >
       <Editable
-        readOnly={false}
+        readOnly={props.readOnly}
         className="slate-editor"
         renderElement={renderElement}
         onKeyDown={onKeyDown}

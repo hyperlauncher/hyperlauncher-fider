@@ -13,6 +13,7 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
 	"github.com/getfider/fider/app/pkg/errors"
+	"github.com/getfider/fider/app/pkg/privy"
 	"github.com/getfider/fider/app/pkg/web"
 	webutil "github.com/getfider/fider/app/pkg/web/util"
 	"github.com/getfider/fider/app/tasks"
@@ -108,41 +109,85 @@ func VerifySignInKey(kind enum.EmailVerificationKind) web.HandlerFunc {
 }
 
 // CompleteSignInProfile handles the action to update user profile
-func CompleteSignInProfile() web.HandlerFunc {
+// func CompleteSignInProfile() web.HandlerFunc {
+// 	return func(c *web.Context) error {
+// 		action := new(actions.CompleteProfile)
+// 		if result := c.BindTo(action); !result.Ok {
+// 			return c.HandleValidation(result)
+// 		}
+
+// 		result, err := validateKey(action.Kind, action.Key, c)
+// 		if result == nil {
+// 			return err
+// 		}
+
+// 		err = bus.Dispatch(c, &query.GetUserByEmail{Email: result.Email})
+// 		if errors.Cause(err) != app.ErrNotFound {
+// 			// Not possible to create user that already exists
+// 			return c.BadRequest(web.Map{})
+// 		}
+
+// 		user := &entity.User{
+// 			Name:   action.Name,
+// 			Email:  result.Email,
+// 			Tenant: c.Tenant(),
+// 			Role:   enum.RoleVisitor,
+// 		}
+// 		err = bus.Dispatch(c, &cmd.RegisterUser{User: user})
+// 		if err != nil {
+// 			return c.Failure(err)
+// 		}
+
+// 		err = bus.Dispatch(c, &cmd.SetKeyAsVerified{Key: action.Key})
+// 		if err != nil {
+// 			return c.Failure(err)
+// 		}
+
+// 		webutil.AddAuthUserCookie(c, user)
+
+// 		return c.Ok(web.Map{})
+// 	}
+// }
+
+func CompleteSignIn() web.HandlerFunc {
 	return func(c *web.Context) error {
-		action := new(actions.CompleteProfile)
+		token := webutil.GetPrivyToken(c)
+		action := new(actions.CompletePrivyProfile)
 		if result := c.BindTo(action); !result.Ok {
 			return c.HandleValidation(result)
 		}
 
-		result, err := validateKey(action.Kind, action.Key, c)
-		if result == nil {
-			return err
+		if token == "" {
+			return c.Redirect(c.BaseURL())
 		}
 
-		err = bus.Dispatch(c, &query.GetUserByEmail{Email: result.Email})
-		if errors.Cause(err) != app.ErrNotFound {
-			// Not possible to create user that already exists
-			return c.BadRequest(web.Map{})
-		}
-
-		user := &entity.User{
-			Name:   action.Name,
-			Email:  result.Email,
-			Tenant: c.Tenant(),
-			Role:   enum.RoleVisitor,
-		}
-		err = bus.Dispatch(c, &cmd.RegisterUser{User: user})
+		claims, err := privy.DecodePrivyToken(token)
 		if err != nil {
 			return c.Failure(err)
-		}
+		} else {
+			userByClaimsID := &query.GetUserByProvider{Provider: web.OAuthProviderPrivy, UID: claims.UserId}
+			err = bus.Dispatch(c, userByClaimsID)
+			if errors.Cause(err) != app.ErrNotFound {
+				return c.Failure(errors.New("user already exists"))
+			}
+			user := &entity.User{
+				Name:   action.Name,
+				Tenant: c.Tenant(),
+				Role:   enum.RoleVisitor,
+				Providers: []*entity.UserProvider{
+					{
+						UID:  userByClaimsID.UID,
+						Name: web.OAuthProviderPrivy,
+					},
+				},
+			}
 
-		err = bus.Dispatch(c, &cmd.SetKeyAsVerified{Key: action.Key})
-		if err != nil {
-			return c.Failure(err)
+			err = bus.Dispatch(c, &cmd.RegisterUser{User: user})
+			if err != nil {
+				return c.Failure(err)
+			}
+			webutil.AddAuthUserCookie(c, user)
 		}
-
-		webutil.AddAuthUserCookie(c, user)
 
 		return c.Ok(web.Map{})
 	}

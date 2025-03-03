@@ -6,9 +6,9 @@ import { UserSettings, UserAvatarType, ImageUpload } from "@fider/models"
 import { Failure, actions, Fider } from "@fider/services"
 import { NotificationSettings } from "./components/NotificationSettings"
 import { APIKeyForm } from "./components/APIKeyForm"
-import { DangerZone } from "./components/DangerZone"
 import { i18n } from "@lingui/core"
 import { Trans } from "@lingui/react/macro"
+import DangerZone from "./components/DangerZone"
 
 interface MySettingsPageState {
   showModal: boolean
@@ -52,31 +52,6 @@ export default class MySettingsPage extends React.Component<MySettingsPageProps,
     }
   }
 
-  private submitNewEmail = async () => {
-    const result = await actions.changeUserEmail(this.state.newEmail)
-    if (result.ok) {
-      this.setState({
-        error: undefined,
-        changingEmail: false,
-        showModal: true,
-      })
-    } else if (result.error) {
-      this.setState({ error: result.error })
-    }
-  }
-
-  private startChangeEmail = () => {
-    this.setState({ changingEmail: true })
-  }
-
-  private cancelChangeEmail = async () => {
-    this.setState({
-      changingEmail: false,
-      newEmail: "",
-      error: undefined,
-    })
-  }
-
   private avatarTypeChanged = (opt?: SelectOption) => {
     if (opt) {
       this.setState({ avatarType: opt.value as UserAvatarType })
@@ -95,21 +70,11 @@ export default class MySettingsPage extends React.Component<MySettingsPageProps,
     this.setState({ showModal: false })
   }
 
-  private setNewEmail = (newEmail: string) => {
-    this.setState({ newEmail })
-  }
-
   private setAvatar = (avatar: ImageUpload): void => {
     this.setState({ avatar })
   }
 
   public render() {
-    const changeEmail = (
-      <Button variant="tertiary" size="small" onClick={this.startChangeEmail}>
-        <Trans id="action.change">change</Trans>
-      </Button>
-    )
-
     return (
       <>
         <Header />
@@ -141,34 +106,6 @@ export default class MySettingsPage extends React.Component<MySettingsPageProps,
 
           <div className="w-max-7xl">
             <Form error={this.state.error}>
-              <Input
-                label={i18n._("label.email", { message: "Email" })}
-                field="email"
-                value={this.state.changingEmail ? this.state.newEmail : Fider.session.user.email}
-                maxLength={200}
-                disabled={!this.state.changingEmail}
-                afterLabel={this.state.changingEmail ? undefined : changeEmail}
-                onChange={this.setNewEmail}
-              >
-                <p className="text-muted">
-                  {Fider.session.user.email || this.state.changingEmail ? (
-                    <Trans id="mysettings.message.privateemail">Your email is private and will never be publicly displayed.</Trans>
-                  ) : (
-                    <Trans id="mysettings.message.noemail">Your account doesn&apos;t have an email.</Trans>
-                  )}
-                </p>
-                {this.state.changingEmail && (
-                  <>
-                    <Button variant="primary" size="small" onClick={this.submitNewEmail}>
-                      <Trans id="action.confirm">Confirm</Trans>
-                    </Button>
-                    <Button variant="tertiary" size="small" onClick={this.cancelChangeEmail}>
-                      <Trans id="action.cancel">Cancel</Trans>
-                    </Button>
-                  </>
-                )}
-              </Input>
-
               <Input label={i18n._("label.name", { message: "Name" })} field="name" value={this.state.name} maxLength={100} onChange={this.setName} />
 
               <Select

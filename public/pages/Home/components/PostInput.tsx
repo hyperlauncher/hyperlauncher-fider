@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Button, ButtonClickEvent, Input, Form, TextArea, MultiImageUploader } from "@fider/components"
-import { SignInModal } from "@fider/components"
 import { cache, actions, Failure } from "@fider/services"
 import { ImageUpload } from "@fider/models"
 import { useFider } from "@fider/hooks"
 import { i18n } from "@lingui/core"
 import { Trans } from "@lingui/react/macro"
+import { usePrivy } from "@privy-io/react-auth"
 
 interface PostInputProps {
   placeholder: string
@@ -22,12 +22,11 @@ export const PostInput = (props: PostInputProps) => {
     }
     return ""
   }
-
+  const { login } = usePrivy()
   const fider = useFider()
   const titleRef = useRef<HTMLInputElement>()
   const [title, setTitle] = useState(getCachedValue(CACHE_TITLE_KEY))
   const [description, setDescription] = useState(getCachedValue(CACHE_DESCRIPTION_KEY))
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [attachments, setAttachments] = useState<ImageUpload[]>([])
   const [error, setError] = useState<Failure | undefined>(undefined)
 
@@ -35,10 +34,10 @@ export const PostInput = (props: PostInputProps) => {
     props.onTitleChanged(title)
   }, [title])
 
-  const handleTitleFocus = () => {
-    if (!fider.session.isAuthenticated && titleRef.current) {
-      titleRef.current.blur()
-      setIsSignInModalOpen(true)
+  const handleFormClick = (e: React.MouseEvent) => {
+    if (!fider.session.isAuthenticated) {
+      e.preventDefault()
+      login()
     }
   }
 
@@ -48,7 +47,6 @@ export const PostInput = (props: PostInputProps) => {
     props.onTitleChanged(value)
   }
 
-  const hideModal = () => setIsSignInModalOpen(false)
   const clearError = () => setError(undefined)
 
   const handleDescriptionChange = (value: string) => {
@@ -88,14 +86,12 @@ export const PostInput = (props: PostInputProps) => {
 
   return (
     <>
-      <SignInModal isOpen={isSignInModalOpen} onClose={hideModal} />
-      <Form error={error}>
+      <Form error={error} onClick={handleFormClick}>
         <Input
           field="title"
-          disabled={fider.isReadOnly}
+          disabled={fider.isReadOnly || !fider.session.isAuthenticated}
           noTabFocus={!fider.session.isAuthenticated}
           inputRef={titleRef}
-          onFocus={handleTitleFocus}
           maxLength={100}
           value={title}
           onChange={handleTitleChange}

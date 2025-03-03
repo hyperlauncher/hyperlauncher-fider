@@ -1,10 +1,17 @@
-import React from "react"
+import React, { useCallback } from "react"
 import { useFider } from "@fider/hooks"
 import { Avatar, Dropdown } from "./common"
 import { Trans } from "@lingui/react/macro"
+import { usePrivy } from "@privy-io/react-auth"
 
 export const UserMenu = () => {
   const fider = useFider()
+  const { logout } = usePrivy()
+
+  const handleLogout = useCallback(async () => {
+    await logout()
+    location.href = "/signout?redirect=/"
+  }, [logout])
 
   return (
     <div className="c-menu-user">
@@ -26,7 +33,7 @@ export const UserMenu = () => {
             <Dropdown.Divider />
           </>
         )}
-        <Dropdown.ListItem href="/signout?redirect=/">
+        <Dropdown.ListItem onClick={handleLogout}>
           <Trans id="menu.signout">Sign out</Trans>
         </Dropdown.ListItem>
       </Dropdown>

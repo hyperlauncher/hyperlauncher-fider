@@ -26,6 +26,7 @@ interface InputProps {
   onFocus?: () => void
   inputRef?: React.MutableRefObject<any>
   onChange?: (value: string) => void
+  onClick?: () => void
 }
 
 export const Input: React.FunctionComponent<InputProps> = (props) => {
@@ -74,6 +75,7 @@ export const Input: React.FunctionComponent<InputProps> = (props) => {
               value={props.value}
               placeholder={props.placeholder}
               onChange={onChange}
+              onClick={props.onClick}
             />
             {icon}
             {suffix}

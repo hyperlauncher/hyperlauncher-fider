@@ -213,6 +213,8 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 		"baseURL":          ctx.BaseURL(),
 		"assetsURL":        AssetsURL(ctx, ""),
 		"oauth":            oauthProviders.Result,
+		"privyAppId":       env.Config.OAuth.Privy.AppID,
+		"privyClientId":    env.Config.OAuth.Privy.ClientId,
 	}
 
 	if ctx.IsAuthenticated() {

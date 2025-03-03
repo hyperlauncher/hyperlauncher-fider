@@ -3,9 +3,10 @@ import "./VoteCounter.scss"
 import React, { useState } from "react"
 import { Post, PostStatus } from "@fider/models"
 import { actions, classSet } from "@fider/services"
-import { Icon, SignInModal } from "@fider/components"
+import { Icon } from "@fider/components"
 import { useFider } from "@fider/hooks"
 import FaCaretUp from "@fider/assets/images/fa-caretup.svg"
+import { usePrivy } from "@privy-io/react-auth"
 
 export interface VoteCounterProps {
   post: Post
@@ -13,13 +14,13 @@ export interface VoteCounterProps {
 
 export const VoteCounter = (props: VoteCounterProps) => {
   const fider = useFider()
+  const { login } = usePrivy()
   const [hasVoted, setHasVoted] = useState(props.post.hasVoted)
   const [votesCount, setVotesCount] = useState(props.post.votesCount)
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
 
   const voteOrUndo = async () => {
     if (!fider.session.isAuthenticated) {
-      setIsSignInModalOpen(true)
+      login()
       return
     }
 
@@ -31,8 +32,6 @@ export const VoteCounter = (props: VoteCounterProps) => {
       setHasVoted(!hasVoted)
     }
   }
-
-  const hideModal = () => setIsSignInModalOpen(false)
 
   const status = PostStatus.Get(props.post.status)
   const isDisabled = status.closed || fider.isReadOnly
@@ -60,7 +59,6 @@ export const VoteCounter = (props: VoteCounterProps) => {
 
   return (
     <>
-      <SignInModal isOpen={isSignInModalOpen} onClose={hideModal} />
       <div className="c-vote-counter">{isDisabled ? disabled : vote}</div>
     </>
   )

@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
+	"github.com/getfider/fider/app/pkg/privy"
 
 	"github.com/getfider/fider/app/pkg/validate"
 
@@ -38,7 +40,25 @@ func User() web.MiddlewareFunc {
 				}
 			}
 
-			if token != "" {
+			tokenPrivy := webutil.GetPrivyToken(c)
+			if token == "" && tokenPrivy != "" {
+				claims, err := privy.DecodePrivyToken(tokenPrivy)
+
+				if err == nil {
+					userByClaimsID := &query.GetUserByProvider{Provider: web.OAuthProviderPrivy, UID: claims.UserId}
+					user_err := bus.Dispatch(c, userByClaimsID)
+					user = userByClaimsID.Result
+					if user_err != nil || user == nil {
+						return c.Page(http.StatusOK, web.Props{
+							Page:  "SignIn/CompleteSignInProfile.page",
+							Title: "Complete Sign In Profile",
+						})
+					}
+					webutil.AddAuthUserCookie(c, user)
+				}
+			}
+
+			if token != "" && user == nil {
 				claims, err := jwt.DecodeFiderClaims(token)
 				if err != nil {
 					c.RemoveCookie(web.CookieAuthName)

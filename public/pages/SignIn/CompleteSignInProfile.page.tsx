@@ -1,30 +1,32 @@
 import React, { useState } from "react"
 
-import { Button, Form, Input, LegalFooter, TenantLogo } from "@fider/components"
+import { Button, Form, Icon, Input, LegalFooter, TenantLogo } from "@fider/components"
 import { actions, Failure } from "@fider/services"
 import { i18n } from "@lingui/core"
 import { Trans } from "@lingui/react/macro"
-
-import { EmailVerificationKind } from "@fider/models"
+import IconBack from "@fider/assets/images/heroicons-chevron-left.svg"
 
 import "./CompleteSignInProfile.page.scss"
+import { usePrivy } from "@privy-io/react-auth"
 
-interface CompleteSignInProfilePageProps {
-  kind: EmailVerificationKind
-  k: string
-}
-
-const CompleteSignInProfilePage = (props: CompleteSignInProfilePageProps) => {
+const CompleteSignInProfilePage = () => {
   const [name, setName] = useState("")
+  const { logout } = usePrivy()
   const [error, setError] = useState<Failure | undefined>()
 
   const submit = async () => {
-    const result = await actions.completeProfile(props.kind, props.k, name)
+    const result = await actions.completePrivyProfile(name)
     if (result.ok) {
       location.href = "/"
     } else if (result.error) {
       setError(result.error)
     }
+  }
+
+  const onBackClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    await logout()
+    location.href = "/"
   }
 
   return (
@@ -34,11 +36,13 @@ const CompleteSignInProfilePage = (props: CompleteSignInProfilePageProps) => {
           <div className="h-20 text-center mb-4">
             <TenantLogo size={100} />
           </div>
-
-          <p className="text-title">
+          <a className="text-link inline-flex flex-items-center" href="#" onClick={onBackClick}>
+            <Icon sprite={IconBack} className="h-4 mr-1" />
+            <Trans id="action.back">Back</Trans>
+          </a>{" "}
+          <p className="text-title mt-4">
             <Trans id="modal.completeprofile.header">Complete your profile</Trans>
           </p>
-
           <p>
             <Trans id="modal.completeprofile.text">Because this is your first sign in, please enter your name.</Trans>
           </p>
@@ -55,7 +59,6 @@ const CompleteSignInProfilePage = (props: CompleteSignInProfilePageProps) => {
               }
             />
           </Form>
-
           <LegalFooter />
         </div>
       </div>

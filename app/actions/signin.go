@@ -54,22 +54,22 @@ func (action *SignInByEmail) Validate(ctx context.Context, user *entity.User) *v
 	return result
 }
 
-//GetEmail returns the email being verified
+// GetEmail returns the email being verified
 func (action *SignInByEmail) GetEmail() string {
 	return action.Email
 }
 
-//GetName returns empty for this kind of process
+// GetName returns empty for this kind of process
 func (action *SignInByEmail) GetName() string {
 	return ""
 }
 
-//GetUser returns the current user performing this action
+// GetUser returns the current user performing this action
 func (action *SignInByEmail) GetUser() *entity.User {
 	return nil
 }
 
-//GetKind returns EmailVerificationKindSignIn
+// GetKind returns EmailVerificationKindSignIn
 func (action *SignInByEmail) GetKind() enum.EmailVerificationKind {
 	return enum.EmailVerificationKindSignIn
 }
@@ -98,6 +98,29 @@ func (action *CompleteProfile) Validate(ctx context.Context, user *entity.User) 
 
 	if action.Key == "" {
 		result.AddFieldFailure("key", propertyIsRequired(ctx, "key"))
+	}
+
+	return result
+}
+
+// CompleteProfile for privy happens when users completes their profile during first time sign in
+type CompletePrivyProfile struct {
+	Name string `json:"name"`
+}
+
+// IsAuthorized returns true if current user is authorized to perform this action
+func (action *CompletePrivyProfile) IsAuthorized(ctx context.Context, user *entity.User) bool {
+	return true
+}
+
+// Validate if current model is valid
+func (action *CompletePrivyProfile) Validate(ctx context.Context, user *entity.User) *validate.Result {
+	result := validate.Success()
+
+	if action.Name == "" {
+		result.AddFieldFailure("name", propertyIsRequired(ctx, "name"))
+	} else if len(action.Name) > 50 {
+		result.AddFieldFailure("name", propertyMaxStringLen(ctx, "name", 50))
 	}
 
 	return result

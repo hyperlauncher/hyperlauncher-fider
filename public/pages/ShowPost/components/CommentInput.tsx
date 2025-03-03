@@ -2,7 +2,6 @@ import React, { useState } from "react"
 
 import { Post, ImageUpload } from "@fider/models"
 import { Avatar, UserName, Button, Form, MultiImageUploader } from "@fider/components"
-import { SignInModal } from "@fider/components"
 
 import { cache, actions, Failure, Fider } from "@fider/services"
 import { HStack } from "@fider/components/layout"
@@ -11,6 +10,7 @@ import { Trans } from "@lingui/react/macro"
 
 import { CommentEditor } from "@fider/components"
 import { useFider } from "@fider/hooks"
+import { usePrivy } from "@privy-io/react-auth"
 
 interface CommentInputProps {
   post: Post
@@ -27,12 +27,11 @@ export const CommentInput = (props: CommentInputProps) => {
 
   const fider = useFider()
   // const inputRef = useRef<HTMLTextAreaElement>()
+  const { login } = usePrivy()
   const [content, setContent] = useState<string>((fider.session.isAuthenticated && getContentFromCache()) || "")
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [attachments, setAttachments] = useState<ImageUpload[]>([])
   const [error, setError] = useState<Failure | undefined>(undefined)
 
-  const hideModal = () => setIsSignInModalOpen(false)
   const clearError = () => setError(undefined)
 
   const submit = async () => {
@@ -47,10 +46,9 @@ export const CommentInput = (props: CommentInputProps) => {
     }
   }
 
-  const editorFocused = () => {
-    console.log("focused")
+  const handleClick = () => {
     if (!fider.session.isAuthenticated) {
-      setIsSignInModalOpen(true)
+      login()
     }
   }
 
@@ -63,11 +61,10 @@ export const CommentInput = (props: CommentInputProps) => {
 
   return (
     <>
-      <SignInModal isOpen={isSignInModalOpen} onClose={hideModal} />
       <HStack spacing={2} className="c-comment-input">
         {Fider.session.isAuthenticated && <Avatar user={Fider.session.user} />}
         <div className="flex-grow bg-gray-50 rounded-md p-2">
-          <Form error={error}>
+          <Form error={error} onClick={handleClick}>
             {Fider.session.isAuthenticated && (
               <div className="mb-1">
                 <UserName user={Fider.session.user} />
@@ -76,7 +73,7 @@ export const CommentInput = (props: CommentInputProps) => {
             <CommentEditor
               initialValue={content}
               onChange={commentChanged}
-              onFocus={editorFocused}
+              readOnly={!Fider.session.isAuthenticated}
               placeholder={i18n._("showpost.commentinput.placeholder", { message: "Leave a comment" })}
             />
             {hasContent && (

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/getfider/fider/app/metrics"
 	"github.com/getfider/fider/app/models/entity"
@@ -43,6 +42,90 @@ func CheckAvailability() web.HandlerFunc {
 }
 
 // CreateTenant creates a new tenant
+// func CreateTenant() web.HandlerFunc {
+// 	return func(c *web.Context) error {
+// 		if env.Config.SignUpDisabled {
+// 			return c.NotFound()
+// 		}
+
+// 		action := actions.NewCreateTenant()
+// 		if result := c.BindTo(action); !result.Ok {
+// 			return c.HandleValidation(result)
+// 		}
+
+// 		socialSignUp := action.Token != ""
+
+// 		status := enum.TenantPending
+// 		if socialSignUp {
+// 			status = enum.TenantActive
+// 		}
+
+// 		createTenant := &cmd.CreateTenant{
+// 			Name:      action.TenantName,
+// 			Subdomain: action.Subdomain,
+// 			Status:    status,
+// 		}
+// 		err := bus.Dispatch(c, createTenant)
+// 		if err != nil {
+// 			return c.Failure(err)
+// 		}
+
+// 		metrics.TotalTenants.Inc()
+// 		c.SetTenant(createTenant.Result)
+
+// 		user := &entity.User{
+// 			Tenant: createTenant.Result,
+// 			Role:   enum.RoleAdministrator,
+// 		}
+
+// 		siteURL := web.TenantBaseURL(c, c.Tenant())
+
+// 		if socialSignUp {
+// 			user.Name = action.UserClaims.OAuthName
+// 			user.Email = action.UserClaims.OAuthEmail
+// 			user.Providers = []*entity.UserProvider{
+// 				{
+// 					UID:  action.UserClaims.OAuthID,
+// 					Name: action.UserClaims.OAuthProvider,
+// 				},
+// 			}
+
+// 			if err := bus.Dispatch(c, &cmd.RegisterUser{User: user}); err != nil {
+// 				return c.Failure(err)
+// 			}
+
+// 			if env.IsSingleHostMode() {
+// 				webutil.AddAuthUserCookie(c, user)
+// 			} else {
+// 				webutil.SetSignUpAuthCookie(c, user)
+// 			}
+
+// 		} else {
+// 			user.Name = action.Name
+// 			user.Email = action.Email
+
+// 			err := bus.Dispatch(c, &cmd.SaveVerificationKey{
+// 				Key:      action.VerificationKey,
+// 				Duration: 48 * time.Hour,
+// 				Request:  action,
+// 			})
+// 			if err != nil {
+// 				return c.Failure(err)
+// 			}
+
+// 			c.Enqueue(tasks.SendSignUpEmail(action, siteURL))
+// 		}
+
+// 		// Handle userlist.
+// 		if env.Config.UserList.Enabled {
+// 			c.Enqueue(tasks.UserListCreateCompany(*createTenant.Result, *user))
+// 		}
+
+// 		return c.Ok(web.Map{})
+// 	}
+// }
+
+// CreateTenant creates a new tenant using privy
 func CreateTenant() web.HandlerFunc {
 	return func(c *web.Context) error {
 		if env.Config.SignUpDisabled {
@@ -53,13 +136,7 @@ func CreateTenant() web.HandlerFunc {
 		if result := c.BindTo(action); !result.Ok {
 			return c.HandleValidation(result)
 		}
-
-		socialSignUp := action.Token != ""
-
-		status := enum.TenantPending
-		if socialSignUp {
-			status = enum.TenantActive
-		}
+		status := enum.TenantActive
 
 		createTenant := &cmd.CreateTenant{
 			Name:      action.TenantName,
@@ -79,42 +156,22 @@ func CreateTenant() web.HandlerFunc {
 			Role:   enum.RoleAdministrator,
 		}
 
-		siteURL := web.TenantBaseURL(c, c.Tenant())
+		user.Name = action.Name
+		user.Providers = []*entity.UserProvider{
+			{
+				UID:  action.PrivyUserClaims.UserId,
+				Name: web.OAuthProviderPrivy,
+			},
+		}
 
-		if socialSignUp {
-			user.Name = action.UserClaims.OAuthName
-			user.Email = action.UserClaims.OAuthEmail
-			user.Providers = []*entity.UserProvider{
-				{
-					UID:  action.UserClaims.OAuthID,
-					Name: action.UserClaims.OAuthProvider,
-				},
-			}
+		if err := bus.Dispatch(c, &cmd.RegisterUser{User: user}); err != nil {
+			return c.Failure(err)
+		}
 
-			if err := bus.Dispatch(c, &cmd.RegisterUser{User: user}); err != nil {
-				return c.Failure(err)
-			}
-
-			if env.IsSingleHostMode() {
-				webutil.AddAuthUserCookie(c, user)
-			} else {
-				webutil.SetSignUpAuthCookie(c, user)
-			}
-
+		if env.IsSingleHostMode() {
+			webutil.AddAuthUserCookie(c, user)
 		} else {
-			user.Name = action.Name
-			user.Email = action.Email
-
-			err := bus.Dispatch(c, &cmd.SaveVerificationKey{
-				Key:      action.VerificationKey,
-				Duration: 48 * time.Hour,
-				Request:  action,
-			})
-			if err != nil {
-				return c.Failure(err)
-			}
-
-			c.Enqueue(tasks.SendSignUpEmail(action, siteURL))
+			webutil.SetSignUpAuthCookie(c, user)
 		}
 
 		// Handle userlist.

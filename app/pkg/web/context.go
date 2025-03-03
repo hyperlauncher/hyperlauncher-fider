@@ -59,6 +59,8 @@ const CookieSessionName = "user_session_id"
 
 // CookieAuthName is the name of the cookie that holds the Authentication Token
 const CookieAuthName = "auth"
+const CookiePrivyToken = "privy-token"
+const OAuthProviderPrivy = "privy"
 
 // CookieSignUpAuthName is the name of the cookie that holds the temporary Authentication Token
 const CookieSignUpAuthName = "__signup_auth"

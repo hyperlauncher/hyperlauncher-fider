@@ -10,7 +10,7 @@ export interface CreateTenantRequest {
   tenantName: string
   subdomain?: string
   name?: string
-  token?: string
+  privyToken?: string
   email?: string
 }
 
@@ -65,6 +65,12 @@ export const completeProfile = async (kind: EmailVerificationKind, key: string, 
   return await http.post("/_api/signin/complete", {
     kind,
     key,
+    name,
+  })
+}
+
+export const completePrivyProfile = async (name: string): Promise<Result> => {
+  return await http.post("/_api/signin/complete", {
     name,
   })
 }

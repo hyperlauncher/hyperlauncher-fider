@@ -17,6 +17,8 @@ export interface SystemSettings {
   domain: string
   hasLegal: boolean
   isBillingEnabled: boolean
+  privyAppId: string
+  privyClientId: string
   baseURL: string
   assetsURL: string
   oauth: OAuthProviderOption[]

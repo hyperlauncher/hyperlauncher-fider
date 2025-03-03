@@ -49,7 +49,7 @@ type config struct {
 	Locale                      string `env:"LOCALE,default=en"`
 	JWTSecret                   string `env:"JWT_SECRET,required"`
 	PostCreationWithTagsEnabled bool   `env:"POST_CREATION_WITH_TAGS_ENABLED,default=false"`
-	Paddle     struct {
+	Paddle                      struct {
 		IsSandbox      bool   `env:"PADDLE_SANDBOX,default=false"`
 		VendorID       string `env:"PADDLE_VENDOR_ID"`
 		VendorAuthCode string `env:"PADDLE_VENDOR_AUTHCODE"`
@@ -93,6 +93,11 @@ type config struct {
 		GitHub struct {
 			ClientID string `env:"OAUTH_GITHUB_CLIENTID"`
 			Secret   string `env:"OAUTH_GITHUB_SECRET"`
+		}
+		Privy struct {
+			AppID    string `env:"OAUTH_PRIVY_APP_ID"`
+			Key      string `env:"OAUTH_PRIVY_KEY"`
+			ClientId string `env:"OAUTH_PRIVY_CLIENT_ID"`
 		}
 	}
 	Email struct {

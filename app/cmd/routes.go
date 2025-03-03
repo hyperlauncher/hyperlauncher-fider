@@ -52,7 +52,6 @@ func routes(r *web.Engine) *web.Engine {
 	r.Use(middlewares.Maintenance())
 	r.Use(middlewares.WebSetup())
 	r.Use(middlewares.Tenant())
-	r.Use(middlewares.User())
 
 	r.Get("/privacy", handlers.LegalPage("Privacy Policy", "privacy.md"))
 
@@ -68,14 +67,10 @@ func routes(r *web.Engine) *web.Engine {
 	r.Get("/terms", handlers.LegalPage("Terms of Service", "terms.md"))
 
 	r.Post("/_api/tenants", handlers.CreateTenant())
-	r.Get("/_api/tenants/:subdomain/availability", handlers.CheckAvailability())
 	r.Get("/signup", handlers.SignUp())
-	r.Get("/oauth/:provider", handlers.SignInByOAuth())
-	r.Get("/oauth/:provider/callback", handlers.OAuthCallback())
 
 	// Starting from this step, a Tenant is required
 	r.Use(middlewares.RequireTenant())
-
 	r.Get("/sitemap.xml", handlers.Sitemap())
 
 	tenantAssets := r.Group()
@@ -93,21 +88,15 @@ func routes(r *web.Engine) *web.Engine {
 	}
 
 	r.Get("/_design", handlers.Page("Design System", "A preview of Fider UI elements", "DesignSystem/DesignSystem.page"))
-	r.Get("/signup/verify", handlers.VerifySignUpKey())
 	r.Get("/signout", handlers.SignOut())
-	r.Get("/oauth/:provider/token", handlers.OAuthToken())
-	r.Get("/oauth/:provider/echo", handlers.OAuthEcho())
 
 	// If tenant is pending, block it from using any other route
 	r.Use(middlewares.BlockPendingTenants())
 
 	r.Get("/signin", handlers.SignInPage())
-	r.Get("/not-invited", handlers.NotInvitedPage())
-	r.Get("/signin/verify", handlers.VerifySignInKey(enum.EmailVerificationKindSignIn))
-	r.Get("/invite/verify", handlers.VerifySignInKey(enum.EmailVerificationKindUserInvitation))
-	r.Post("/_api/signin/complete", handlers.CompleteSignInProfile())
-	r.Post("/_api/signin", handlers.SignInByEmail())
+	r.Post("/_api/signin/complete", handlers.CompleteSignIn())
 
+	r.Use(middlewares.User())
 	// Block if it's private tenant with unauthenticated user
 	r.Use(middlewares.CheckTenantPrivacy())
 
@@ -124,12 +113,11 @@ func routes(r *web.Engine) *web.Engine {
 		ui.Get("/notifications", handlers.Notifications())
 		ui.Get("/notifications/:id", handlers.ReadNotification())
 		ui.Get("/_api/notifications/unread", handlers.GetAllNotifications())
-		ui.Get("/change-email/verify", handlers.VerifyChangeEmailKey())
 
 		ui.Delete("/_api/user", handlers.DeleteUser())
 		ui.Post("/_api/user/regenerate-apikey", handlers.RegenerateAPIKey())
 		ui.Post("/_api/user/settings", handlers.UpdateUserSettings())
-		ui.Post("/_api/user/change-email", handlers.ChangeUserEmail())
+		// ui.Post("/_api/user/change-email", handlers.ChangeUserEmail())
 		ui.Post("/_api/notifications/read-all", handlers.ReadAllNotifications())
 		ui.Get("/_api/notifications/unread/total", handlers.TotalUnreadNotifications())
 
@@ -142,11 +130,9 @@ func routes(r *web.Engine) *web.Engine {
 
 		ui.Get("/admin", handlers.GeneralSettingsPage())
 		ui.Get("/admin/advanced", handlers.AdvancedSettingsPage())
-		ui.Get("/admin/privacy", handlers.Page("Privacy · Site Settings", "", "Administration/pages/PrivacySettings.page"))
-		ui.Get("/admin/invitations", handlers.Page("Invitations · Site Settings", "", "Administration/pages/Invitations.page"))
 		ui.Get("/admin/members", handlers.ManageMembers())
 		ui.Get("/admin/tags", handlers.ManageTags())
-		ui.Get("/admin/authentication", handlers.ManageAuthentication())
+		// ui.Get("/admin/authentication", handlers.ManageAuthentication())
 		ui.Get("/_api/admin/oauth/:provider", handlers.GetOAuthConfig())
 
 		// From this step, only Administrators are allowed

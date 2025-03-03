@@ -45,8 +45,8 @@ type OAuthClaims struct {
 
 // OAuthStateClaims represents what goes into JWT tokens used for OAuth state parameter
 type OAuthStateClaims struct {
-	Redirect    string    `json:"oauthstate/redirect"`
-	Identifier  string `json:"oauthstate/identifier"`
+	Redirect   string `json:"oauthstate/redirect"`
+	Identifier string `json:"oauthstate/identifier"`
 	Metadata
 }
 

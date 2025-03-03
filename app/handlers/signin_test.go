@@ -501,7 +501,7 @@ func TestCompleteSignInProfileHandler_UnknownKey(t *testing.T) {
 	code, _ := server.
 		OnTenant(mock.DemoTenant).
 		WithURL("http://demo.test.fider.io/signin/complete").
-		ExecutePost(handlers.CompleteSignInProfile(), `{ }`)
+		ExecutePost(handlers.CompleteSignIn(), `{ }`)
 
 	Expect(code).Equals(http.StatusBadRequest)
 }
@@ -535,7 +535,7 @@ func TestCompleteSignInProfileHandler_ExistingUser_CorrectKey(t *testing.T) {
 	code, _ := server.
 		OnTenant(mock.DemoTenant).
 		WithURL("http://demo.test.fider.io/signin/complete").
-		ExecutePost(handlers.CompleteSignInProfile(), fmt.Sprintf(`
+		ExecutePost(handlers.CompleteSignIn(), fmt.Sprintf(`
 		{
 			"name": "Hot Pie",
 			"kind": %d,
@@ -587,7 +587,7 @@ func TestCompleteSignInProfileHandler_CorrectKey(t *testing.T) {
 	code, response := server.
 		OnTenant(mock.DemoTenant).
 		WithURL("http://demo.test.fider.io/signin/complete").
-		ExecutePost(handlers.CompleteSignInProfile(), fmt.Sprintf(`
+		ExecutePost(handlers.CompleteSignIn(), fmt.Sprintf(`
 		{
 			"name": "Hot Pie",
 			"kind": %d,

@@ -12,6 +12,7 @@ interface FormProps {
   children?: React.ReactNode
   className?: string
   error?: Failure
+  onClick?: React.MouseEventHandler<HTMLFormElement>
 }
 
 export const ValidationContext = React.createContext<ValidationContext>({})
@@ -23,7 +24,7 @@ export const Form: React.FunctionComponent<FormProps> = (props) => {
   })
 
   return (
-    <form autoComplete="off" className={className}>
+    <form onClick={props.onClick} autoComplete="off" className={className}>
       <DisplayError error={props.error} />
       <ValidationContext.Provider value={{ error: props.error }}>{props.children}</ValidationContext.Provider>
     </form>

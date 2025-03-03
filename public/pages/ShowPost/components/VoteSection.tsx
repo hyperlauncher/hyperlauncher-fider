@@ -1,12 +1,13 @@
 import React, { useState } from "react"
 import { Post, PostStatus } from "@fider/models"
 import { actions } from "@fider/services"
-import { Button, Icon, SignInModal } from "@fider/components"
+import { Button, Icon } from "@fider/components"
 import { useFider } from "@fider/hooks"
 import IconThumbsUp from "@fider/assets/images/heroicons-thumbsup.svg"
 import IconCheck from "@fider/assets/images/heroicons-check.svg"
 import { Trans } from "@lingui/macro"
 import { HStack, VStack } from "@fider/components/layout"
+import { usePrivy } from "@privy-io/react-auth"
 
 interface VoteSectionProps {
   post: Post
@@ -15,13 +16,13 @@ interface VoteSectionProps {
 
 export const VoteSection = (props: VoteSectionProps) => {
   const fider = useFider()
+  const { login } = usePrivy()
   const [votes, setVotes] = useState(props.votes)
   const [hasVoted, setHasVoted] = useState(props.post.hasVoted)
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
 
   const voteOrUndo = async () => {
     if (!fider.session.isAuthenticated) {
-      setIsSignInModalOpen(true)
+      login()
       return
     }
 
@@ -32,8 +33,6 @@ export const VoteSection = (props: VoteSectionProps) => {
     }
   }
 
-  const hideModal = () => setIsSignInModalOpen(false)
-
   const status = PostStatus.Get(props.post.status)
   const isDisabled = status.closed || fider.isReadOnly
 
@@ -42,7 +41,6 @@ export const VoteSection = (props: VoteSectionProps) => {
 
   return (
     <VStack spacing={4}>
-      <SignInModal isOpen={isSignInModalOpen} onClose={hideModal} />
       <div className="align-self-start">
         <Button variant="primary" onClick={voteOrUndo} disabled={isDisabled} style={{ minWidth: "180px" }}>
           <HStack spacing={2} justify="center" className="w-full">

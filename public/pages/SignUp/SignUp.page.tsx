@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from "react"
-import { SignInControl, Modal, Button, DisplayError, Form, Input, Message, LegalAgreement } from "@fider/components"
-import { jwt, actions, Failure, querystring, Fider } from "@fider/services"
+import { SignInControl, Button, DisplayError, Form, Input, Message, LegalAgreement } from "@fider/components"
+import { actions, Failure, Fider } from "@fider/services"
 import { Divider } from "@fider/components/layout"
 import { useFider } from "@fider/hooks"
-
-interface OAuthUser {
-  token: string
-  name: string
-  email: string
-}
+import { getAccessToken, useLogin, User, useLogout } from "@privy-io/react-auth"
 
 interface SubdomainState {
   name: string
@@ -19,35 +14,35 @@ interface SubdomainState {
 const SignUpPage = () => {
   const fider = useFider()
 
-  const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLegalAgreed, setIsLegalAgreed] = useState(false)
   const [tenantName, setTenantName] = useState("")
   const [userName, setUserName] = useState("")
-  const [userEmail, setUserEmail] = useState("")
   const [subdomain, setSubdomain] = useState<SubdomainState>({ name: "", isAvailable: false, message: "" })
   const [error, setError] = useState<Failure | undefined>()
 
-  let user: OAuthUser | undefined
-  const token = querystring.get("token")
-  if (token) {
-    const data = jwt.decode(token)
-    if (data) {
-      user = {
-        token,
-        name: data["oauth/name"],
-        email: data["oauth/email"],
-      }
-    }
-  }
+  const { login } = useLogin({
+    onComplete: ({ user }) => {
+      submit(user)
+    },
+    onError: (error) => {
+      console.error("Login failed:", error)
+    },
+  })
 
-  const confirm = async () => {
+  const { logout } = useLogout()
+
+  const submit = async (user: User) => {
+    const authToken = await getAccessToken()
+    if (!authToken) {
+      throw new Error("Auth token is not empty")
+    }
+
     const result = await actions.createTenant({
-      token: user && user.token,
+      privyToken: authToken,
       legalAgreement: isLegalAgreed,
       tenantName: tenantName,
       subdomain: subdomain.name,
       name: userName,
-      email: userEmail,
     })
 
     if (result.ok) {
@@ -62,12 +57,10 @@ const SignUpPage = () => {
 
           location.href = baseURL
         }
-      } else {
-        setIsSubmitted(true)
       }
     } else if (result.error) {
       setError(result.error)
-      setIsSubmitted(false)
+      logout()
     }
   }
 
@@ -103,25 +96,8 @@ const SignUpPage = () => {
     }
   }, [subdomain.name])
 
-  const noop = () => {
-    // do nothing
-  }
-
-  const modal = (
-    <Modal.Window canClose={false} isOpen={isSubmitted} onClose={noop}>
-      <Modal.Header>Thank you for registering!</Modal.Header>
-      <Modal.Content>
-        <p>
-          We have just sent a confirmation link to <b>{userEmail}</b>.
-        </p>
-        <p>Click the link to complete the registration.</p>
-      </Modal.Content>
-    </Modal.Window>
-  )
-
   return (
     <div id="p-signup" className="page container w-max-6xl">
-      {modal}
       <div className="h-20 text-center mb-4">
         <img className="logo" alt="Logo" src="https://fider.io/images/logo-100x100.png" />
       </div>
@@ -129,21 +105,12 @@ const SignUpPage = () => {
       <h3 className="text-display mb-2">1. Who are you?</h3>
       <DisplayError fields={["token"]} error={error} />
 
-      {user ? (
-        <p>
-          Hello, <b>{user.name}</b> {user.email && `(${user.email})`}
-        </p>
-      ) : (
-        <>
-          <p>We need to identify you to setup your new Fider account.</p>
-          <SignInControl useEmail={false} />
-          <Divider />
-          <Form error={error}>
-            <Input field="name" maxLength={100} onChange={setUserName} placeholder="Name" />
-            <Input field="email" maxLength={200} onChange={setUserEmail} placeholder="Email" />
-          </Form>
-        </>
-      )}
+      <p>We need to identify you to setup your new Fider account.</p>
+      <SignInControl useEmail={false} />
+      <Divider />
+      <Form error={error}>
+        <Input field="name" maxLength={100} onChange={setUserName} placeholder="Name" />
+      </Form>
 
       <h3 className="text-display mb-2 mt-8">2. What is this Feedback Forum for?</h3>
 
@@ -169,8 +136,8 @@ const SignUpPage = () => {
         </div>
       </Form>
 
-      <Button variant="primary" size="large" onClick={confirm}>
-        Confirm
+      <Button disabled={!userName || !tenantName} variant="primary" size="large" onClick={() => login()}>
+        Login
       </Button>
       {fider.settings.isBillingEnabled && <div className="mt-2 text-muted">Your trial starts today and ends in 15 days.</div>}
     </div>

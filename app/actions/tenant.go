@@ -2,8 +2,10 @@ package actions
 
 import (
 	"context"
+
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
+	"github.com/getfider/fider/app/pkg/privy"
 
 	"github.com/getfider/fider/app"
 	"github.com/getfider/fider/app/models/dto"
@@ -11,20 +13,19 @@ import (
 	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/i18n"
-	"github.com/getfider/fider/app/pkg/jwt"
 	"github.com/getfider/fider/app/pkg/validate"
 )
 
-//CreateTenant is the input model used to create a tenant
+// CreateTenant is the input model used to create a tenant
 type CreateTenant struct {
-	Token           string `json:"token"`
+	PrivyToken      string `json:"privyToken"`
+	PrivyUserClaims *privy.PrivyClaims
 	Name            string `json:"name"`
 	Email           string `json:"email" format:"lower"`
 	VerificationKey string
 	TenantName      string `json:"tenantName"`
 	LegalAgreement  bool   `json:"legalAgreement"`
 	Subdomain       string `json:"subdomain" format:"lower"`
-	UserClaims      *jwt.OAuthClaims
 }
 
 func NewCreateTenant() *CreateTenant {
@@ -43,28 +44,20 @@ func (action *CreateTenant) Validate(ctx context.Context, user *entity.User) *va
 	result := validate.Success()
 
 	var err error
-	if action.Name == "" && action.Email == "" {
-		if action.Token == "" {
-			result.AddFieldFailure("token", "Please identify yourself before proceeding.")
-		} else {
-			if action.UserClaims, err = jwt.DecodeOAuthClaims(action.Token); err != nil {
-				return validate.Error(err)
-			}
-		}
-	} else {
-		if action.Email == "" {
-			result.AddFieldFailure("email", "Email is required.")
-		} else {
-			messages := validate.Email(ctx, action.Email)
-			result.AddFieldFailure("email", messages...)
-		}
 
-		if action.Name == "" {
-			result.AddFieldFailure("name", "Name is required.")
+	if action.PrivyToken == "" {
+		result.AddFieldFailure("privy token", "Privy token is required.")
+	} else {
+		if action.PrivyUserClaims, err = privy.DecodePrivyToken(action.PrivyToken); err != nil {
+			return validate.Error(err)
 		}
-		if len(action.Name) > 60 {
-			result.AddFieldFailure("name", "Name must have less than 60 characters.")
-		}
+	}
+
+	if action.Name == "" {
+		result.AddFieldFailure("name", "Name is required.")
+	}
+	if len(action.Name) > 60 {
+		result.AddFieldFailure("name", "Name must have less than 60 characters.")
 	}
 
 	if env.IsSingleHostMode() {
@@ -89,27 +82,27 @@ func (action *CreateTenant) Validate(ctx context.Context, user *entity.User) *va
 	return result
 }
 
-//GetEmail returns the email being verified
+// GetEmail returns the email being verified
 func (action *CreateTenant) GetEmail() string {
 	return action.Email
 }
 
-//GetName returns the name of the email owner
+// GetName returns the name of the email owner
 func (action *CreateTenant) GetName() string {
 	return action.Name
 }
 
-//GetUser returns the current user performing this action
+// GetUser returns the current user performing this action
 func (action *CreateTenant) GetUser() *entity.User {
 	return nil
 }
 
-//GetKind returns EmailVerificationKindSignUp
+// GetKind returns EmailVerificationKindSignUp
 func (action *CreateTenant) GetKind() enum.EmailVerificationKind {
 	return enum.EmailVerificationKindSignUp
 }
 
-//UpdateTenantSettings is the input model used to update tenant settings
+// UpdateTenantSettings is the input model used to update tenant settings
 type UpdateTenantSettings struct {
 	Logo           *dto.ImageUpload `json:"logo"`
 	Title          string           `json:"title"`
@@ -175,7 +168,7 @@ func (action *UpdateTenantSettings) Validate(ctx context.Context, user *entity.U
 	return result
 }
 
-//UpdateTenantAdvancedSettings is the input model used to update tenant advanced settings
+// UpdateTenantAdvancedSettings is the input model used to update tenant advanced settings
 type UpdateTenantAdvancedSettings struct {
 	CustomCSS string `json:"customCSS"`
 }
@@ -190,7 +183,7 @@ func (action *UpdateTenantAdvancedSettings) Validate(ctx context.Context, user *
 	return validate.Success()
 }
 
-//UpdateTenantPrivacy is the input model used to update tenant privacy settings
+// UpdateTenantPrivacy is the input model used to update tenant privacy settings
 type UpdateTenantPrivacy struct {
 	IsPrivate bool `json:"isPrivate"`
 }
