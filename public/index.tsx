@@ -3,11 +3,12 @@ import "@fider/assets/styles/index.scss"
 import React, { Suspense } from "react"
 import { createRoot } from "react-dom/client"
 import { ErrorBoundary, Loader, ReadOnlyNotice, DevBanner } from "@fider/components"
-import { classSet, Fider, FiderContext, actions, activateI18N } from "@fider/services"
+import { classSet, Fider, FiderContext, actions, activateI18N, privyConfig } from "@fider/services"
 
 import { I18n } from "@lingui/core"
 import { I18nProvider } from "@lingui/react"
 import { AsyncPage } from "./AsyncPages"
+import { PrivyProvider } from "@privy-io/react-auth"
 
 const Loading = () => (
   <div className="page">
@@ -50,11 +51,13 @@ const bootstrapApp = (i18n: I18n) => {
       <React.StrictMode>
         <ErrorBoundary onError={logProductionError}>
           <I18nProvider i18n={i18n}>
-            <FiderContext.Provider value={fider}>
-              <DevBanner />
-              <ReadOnlyNotice />
-              <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
-            </FiderContext.Provider>
+            <PrivyProvider appId={fider.settings.privyAppId} clientId={fider.settings.privyClientId || undefined} config={privyConfig}>
+              <FiderContext.Provider value={fider}>
+                <DevBanner />
+                <ReadOnlyNotice />
+                <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
+              </FiderContext.Provider>
+            </PrivyProvider>
           </I18nProvider>
         </ErrorBoundary>
       </React.StrictMode>

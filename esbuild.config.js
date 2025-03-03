@@ -9,7 +9,7 @@ const babel = require("@babel/core")
 const babelPlugin = (options = {}) => ({
   name: "babel",
   setup(build, { transform } = {}) {
-    const { filter = /.*/, namespace = "", config = {} } = options
+    const { filter = /\.(js|jsx|ts|tsx)$/, namespace = "", config = {} } = options
 
     const transformContents = ({ args, contents }) => {
       const babelOptions = babel.loadOptions({

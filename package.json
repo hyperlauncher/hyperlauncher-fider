@@ -6,6 +6,7 @@
   "dependencies": {
     "@lingui/format-json": "^5.1.2",
     "@lingui/react": "^5.1.2",
+    "@privy-io/react-auth": "^2.5.0",
     "dompurify": "^2.3.6",
     "marked": "^4.0.15",
     "react": "^18.3.1",

@@ -4,8 +4,9 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { Fider, FiderContext } from "./services/fider"
 import { DevBanner, ReadOnlyNotice } from "./components"
 
-import { activateI18NSync } from "./services"
+import { activateI18NSync, privyConfig } from "./services"
 import { I18nProvider } from "@lingui/react"
+import { PrivyProvider } from "@privy-io/react-auth"
 
 // Locale files must be bundled for SSR to work synchronously
 const messages: { [key: string]: any } = {
@@ -32,6 +33,7 @@ const pages: { [key: string]: any } = {
   "ShowPost/ShowPost.page": require(`./pages/ShowPost/ShowPost.page`),
   "SignIn/SignIn.page": require(`./pages/SignIn/SignIn.page`),
   "SignUp/SignUp.page": require(`./pages/SignUp/SignUp.page`),
+  "SignIn/CompleteSignInProfile.page": require(`./pages/SignIn/CompleteSignInProfile.page`),
   "SignUp/PendingActivation.page": require(`./pages/SignUp/PendingActivation.page`),
   "Legal/Legal.page": require(`./pages/Legal/Legal.page`),
   "DesignSystem/DesignSystem.page": require(`./pages/DesignSystem/DesignSystem.page`),
@@ -56,11 +58,13 @@ function ssrRender(url: string, args: any) {
 
   return renderToStaticMarkup(
     <I18nProvider i18n={i18n}>
-      <FiderContext.Provider value={fider}>
-        <DevBanner />
-        <ReadOnlyNotice />
-        {React.createElement(component, args.props)}
-      </FiderContext.Provider>
+      <PrivyProvider appId={fider.settings.privyAppId} clientId={fider.settings.privyClientId || undefined} config={privyConfig}>
+        <FiderContext.Provider value={fider}>
+          <DevBanner />
+          <ReadOnlyNotice />
+          {React.createElement(component, args.props)}
+        </FiderContext.Provider>
+      </PrivyProvider>
     </I18nProvider>
   )
 }
