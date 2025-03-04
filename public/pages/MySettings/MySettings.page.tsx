@@ -106,6 +106,16 @@ export default class MySettingsPage extends React.Component<MySettingsPageProps,
 
           <div className="w-max-7xl">
             <Form error={this.state.error}>
+              <Input label={i18n._("label.email", { message: "Email" })} field="email" value={Fider.session.user.email} maxLength={200} disabled={true}>
+                <p className="text-muted">
+                  {Fider.session.user.email ? (
+                    <Trans id="mysettings.message.privateemail">Your email is private and will never be publicly displayed.</Trans>
+                  ) : (
+                    <Trans id="mysettings.message.noemail">Your account doesn&apos;t have an email.</Trans>
+                  )}
+                </p>
+              </Input>
+
               <Input label={i18n._("label.name", { message: "Name" })} field="name" value={this.state.name} maxLength={100} onChange={this.setName} />
 
               <Select
